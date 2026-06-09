@@ -2,7 +2,7 @@ import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type { StabilityClient } from "../client.js";
-import { saveImage } from "../output.js";
+import { saveAndReturn } from "../output.js";
 import type { ToolResult } from "../types.js";
 
 const ReplaceBgSchema = z.object({
@@ -58,8 +58,5 @@ export async function replaceBgHandler(
     fields,
     { subject_image: { path: input.image_path, fieldName: "subject_image" } }
   );
-  const saved = await saveImage(response.artifacts[0], "replace_background");
-  return {
-    content: [{ type: "text", text: `Image saved to: ${saved.filePath}\nSeed: ${saved.seed}` }],
-  };
+  return saveAndReturn(response.artifacts[0], "replace_background", input.output_format ?? "png");
 }

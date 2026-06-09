@@ -2,7 +2,7 @@ import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type { StabilityClient } from "../client.js";
-import { saveImage } from "../output.js";
+import { saveAndReturn } from "../output.js";
 import type { ToolResult } from "../types.js";
 
 const InpaintSchema = z.object({
@@ -43,8 +43,5 @@ export async function inpaintHandler(
       mask: { path: input.mask_path, fieldName: "mask" },
     }
   );
-  const saved = await saveImage(response.artifacts[0], "inpaint");
-  return {
-    content: [{ type: "text", text: `Image saved to: ${saved.filePath}\nSeed: ${saved.seed}` }],
-  };
+  return saveAndReturn(response.artifacts[0], "inpaint", input.output_format ?? "png");
 }

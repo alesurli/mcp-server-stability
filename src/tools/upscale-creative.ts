@@ -2,7 +2,7 @@ import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type { StabilityClient } from "../client.js";
-import { saveImage } from "../output.js";
+import { saveAndReturn } from "../output.js";
 import type { ToolResult } from "../types.js";
 
 const UpscaleCreativeSchema = z.object({
@@ -40,8 +40,5 @@ export async function upscaleCreativeHandler(
 
   const id = await client.startCreativeUpscale(input.image_path, input.prompt, extraFields);
   const response = await client.pollCreativeUpscale(id);
-  const saved = await saveImage(response.artifacts[0], "upscale_creative");
-  return {
-    content: [{ type: "text", text: `Image saved to: ${saved.filePath}\nSeed: ${saved.seed}` }],
-  };
+  return saveAndReturn(response.artifacts[0], "upscale_creative", input.output_format ?? "png");
 }

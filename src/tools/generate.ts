@@ -2,7 +2,7 @@ import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type { StabilityClient } from "../client.js";
-import { saveImage } from "../output.js";
+import { saveAndReturn } from "../output.js";
 import type { ToolResult } from "../types.js";
 
 const aspectRatios = ["16:9", "1:1", "21:9", "2:3", "3:2", "4:5", "5:4", "9:16", "9:21"] as const;
@@ -45,10 +45,7 @@ export async function generateSd3Handler(
   if (input.seed !== undefined) fields.seed = input.seed;
 
   const response = await client.request("/stable-image/generate/sd3", fields);
-  const saved = await saveImage(response.artifacts[0], "generate_sd3");
-  return {
-    content: [{ type: "text", text: `Image saved to: ${saved.filePath}\nSeed: ${saved.seed}` }],
-  };
+  return saveAndReturn(response.artifacts[0], "generate_sd3", input.output_format ?? "png");
 }
 
 // ── Core ───────────────────────────────────────────────────────────────────
@@ -90,10 +87,7 @@ export async function generateCoreHandler(
   if (input.seed !== undefined) fields.seed = input.seed;
 
   const response = await client.request("/stable-image/generate/core", fields);
-  const saved = await saveImage(response.artifacts[0], "generate_core");
-  return {
-    content: [{ type: "text", text: `Image saved to: ${saved.filePath}\nSeed: ${saved.seed}` }],
-  };
+  return saveAndReturn(response.artifacts[0], "generate_core", input.output_format ?? "png");
 }
 
 // ── Ultra ──────────────────────────────────────────────────────────────────
@@ -127,8 +121,5 @@ export async function generateUltraHandler(
   if (input.seed !== undefined) fields.seed = input.seed;
 
   const response = await client.request("/stable-image/generate/ultra", fields);
-  const saved = await saveImage(response.artifacts[0], "generate_ultra");
-  return {
-    content: [{ type: "text", text: `Image saved to: ${saved.filePath}\nSeed: ${saved.seed}` }],
-  };
+  return saveAndReturn(response.artifacts[0], "generate_ultra", input.output_format ?? "png");
 }

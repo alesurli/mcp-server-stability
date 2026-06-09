@@ -2,7 +2,7 @@ import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type { StabilityClient } from "../client.js";
-import { saveImage } from "../output.js";
+import { saveAndReturn } from "../output.js";
 import type { ToolResult } from "../types.js";
 
 const SearchRecolorSchema = z.object({
@@ -39,8 +39,5 @@ export async function searchRecolorHandler(
     fields,
     { image: { path: input.image_path, fieldName: "image" } }
   );
-  const saved = await saveImage(response.artifacts[0], "search_and_recolor");
-  return {
-    content: [{ type: "text", text: `Image saved to: ${saved.filePath}\nSeed: ${saved.seed}` }],
-  };
+  return saveAndReturn(response.artifacts[0], "search_and_recolor", input.output_format ?? "png");
 }
