@@ -4,29 +4,48 @@
 [![CI](https://github.com/alesurli/mcp-server-stability/actions/workflows/ci.yml/badge.svg)](https://github.com/alesurli/mcp-server-stability/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-A Claude Desktop MCP server for [Stability.ai](https://stability.ai) image generation and editing — always up to date with the v2beta API.
+A Claude MCP server for [Stability.ai](https://stability.ai) image generation and editing — always maintained and up to date with the v2beta API.
 
-Generate images, remove backgrounds, replace backgrounds with relighting, inpaint, outpaint, upscale, and more — all from natural language inside Claude.
+Generate, edit, upscale, and manage images entirely through natural language inside Claude. No manual file paths required.
 
 ---
 
 ## Tools
 
+### Generation
+
 | Tool | Description | Cost |
 |---|---|---|
-| `generate_image_sd3` | Generate with SD3.5 — best overall quality | ~$0.035–$0.065 |
-| `generate_image_core` | Generate with Core — fast, supports style presets | ~$0.03 |
-| `generate_image_ultra` | Generate with Ultra — highest photorealistic quality | ~$0.08 |
-| `remove_background` | Remove background, return transparent PNG | $0.02 |
-| `replace_background` | Replace + relight background, great for product shots | ~$0.04 |
+| `generate_image_sd3` | SD3.5 — best overall quality, supports negative prompts | ~$0.035–$0.065 |
+| `generate_image_core` | Core — fast generation with style presets | ~$0.03 |
+| `generate_image_ultra` | Ultra — highest photorealistic quality | ~$0.08 |
+
+### Editing
+
+| Tool | Description | Cost |
+|---|---|---|
+| `remove_background` | Remove background, returns transparent PNG | $0.02 |
+| `replace_background` | Replace + relight background — great for product shots | ~$0.04 |
 | `inpaint` | Edit a masked region using a prompt | ~$0.03 |
 | `search_and_replace` | Find an object by description and replace it, no mask needed | $0.04 |
-| `outpaint` | Extend the canvas in any direction | $0.04 |
 | `search_and_recolor` | Recolor a specific object by description, no mask needed | ~$0.04 |
+| `outpaint` | Extend the canvas in any direction | $0.04 |
+
+### Upscaling
+
+| Tool | Description | Cost |
+|---|---|---|
 | `upscale_fast` | 4x upscale, preserves original appearance | $0.01 |
 | `upscale_creative` | 4x upscale with AI artistic enhancement | ~$0.25 |
 
-Output images are saved to `~/stability-output/` with filenames that include the tool name, timestamp, and seed.
+### File management (no API cost)
+
+| Tool | Description |
+|---|---|
+| `list_images` | List images in output/input directories with thumbnails |
+| `use_clipboard_image` | Save clipboard image to file for use in the next tool (macOS) |
+| `reveal_in_finder` | Open the output folder or reveal a file in Finder (macOS) |
+| `delete_image` | Permanently delete an image file |
 
 ---
 
@@ -38,12 +57,10 @@ Sign up at [platform.stability.ai](https://platform.stability.ai/account/keys) a
 
 ### 2. Add the server to Claude Desktop
 
-Open the Claude Desktop config file for your OS and add the `stability` block inside `mcpServers`:
+Open the Claude Desktop config file and add the `stability` block inside `mcpServers`:
 
-**macOS** — `~/Library/Application Support/Claude/claude_desktop_config.json`
-
-**Windows** — `%APPDATA%\Claude\claude_desktop_config.json`
-
+**macOS** — `~/Library/Application Support/Claude/claude_desktop_config.json`  
+**Windows** — `%APPDATA%\Claude\claude_desktop_config.json`  
 **Linux** — `~/.config/Claude/claude_desktop_config.json`
 
 ```json
@@ -70,24 +87,40 @@ The Stability AI tools will appear automatically.
 
 ### Generate an image
 
-> *"Generate a cinematic photo of a red panda sitting on a mossy log in a rainy forest, 16:9"*
+> *"Generate a cinematic photo of a red panda on a mossy log in a rainy forest, 16:9"*
 
-### Remove and replace a background (product shot pipeline)
+### Product photo pipeline (remove → replace → upscale)
 
-> *"Take the photo at /Users/me/part.jpg, remove its background, then place it on a dark dramatic studio background with top lighting, then upscale it 4x."*
+> *"Take the photo at /Users/me/dragon.jpg, remove the background, place it on a dark dramatic studio background with top lighting, then upscale 4x."*
 
-Claude will chain the three tools automatically:
-1. `remove_background` → isolates the subject
-2. `replace_background` → dark studio bg + relighting
+Claude chains the tools automatically:
+1. `remove_background` → isolates subject, saves PNG
+2. `replace_background` → dark studio background + relighting
 3. `upscale_fast` → 4x resolution boost
+
+### Use the clipboard instead of a file path
+
+> *"Use the image I just copied, remove the background, then replace it with a blurred workshop background."*
+
+1. Copy an image to clipboard (⌘C in any app)
+2. Claude calls `use_clipboard_image` → saves to file
+3. `remove_background` → `replace_background` automatically
+
+### Work with short filenames
+
+After the first tool runs, Claude knows the output filename. You can reference files naturally:
+
+> *"Now upscale the remove_background result"* or *"List my images and upscale the latest one"*
+
+`list_images` shows all available files — Claude can pick the right one without you typing a path.
 
 ### Recolor an object
 
 > *"In /Users/me/device.jpg, recolor the plastic housing to matte black."*
 
-### Extend a portrait to landscape
+### Extend a portrait to widescreen
 
-> *"Outpaint /Users/me/portrait.jpg by 600px left and 600px right to make it widescreen, prompt: continuation of the blurred background."*
+> *"Outpaint /Users/me/portrait.jpg by 600px left and 600px right, prompt: continuation of the blurred background."*
 
 ---
 
@@ -95,20 +128,28 @@ Claude will chain the three tools automatically:
 
 Results are saved to `~/Downloads/stability-ai/` by default (created automatically).
 
-To use a different folder, set `STABILITY_OUTPUT_DIR` in the Claude Desktop config:
+Filename format: `{tool}_{YYYY-MM-DD}_{HH-MM-SS}_{seed}.{ext}`  
+Example: `replace-background_2026-06-09_11-36-20_2847291838.png`
+
+### Environment variables
+
+| Variable | Default | Description |
+|---|---|---|
+| `STABILITY_API_KEY` | *(required)* | Your Stability AI API key |
+| `STABILITY_OUTPUT_DIR` | `~/Downloads/stability-ai` | Where generated images are saved |
+| `STABILITY_INPUT_DIR` | *(unset)* | Folder Claude searches for input images by short name |
+
+Configure in Claude Desktop:
 
 ```json
 "env": {
   "STABILITY_API_KEY": "sk-...",
-  "STABILITY_OUTPUT_DIR": "/Users/you/Pictures/stability"
+  "STABILITY_OUTPUT_DIR": "/Users/you/Pictures/stability",
+  "STABILITY_INPUT_DIR": "/Users/you/Pictures/input"
 }
 ```
 
-Filename format: `{tool}_{YYYY-MM-DD}_{HH-MM-SS}_{seed}.{ext}`
-
-Example: `replace-background_2026-06-09_11-36-20_2847291838.png`
-
-Pass any output path directly to the next tool — Claude handles the chaining.
+With `STABILITY_INPUT_DIR` set, you can pass bare filenames like `"dragon.jpg"` instead of full paths — Claude resolves them automatically.
 
 ---
 
@@ -121,7 +162,7 @@ npm install
 npm run build
 ```
 
-To use your local build with Claude Desktop, point the config at the compiled file:
+Point Claude Desktop at your local build:
 
 ```json
 {
@@ -137,7 +178,7 @@ To use your local build with Claude Desktop, point the config at the compiled fi
 }
 ```
 
-Requires **Node.js 22+** (uses native `fetch` and `FormData`).
+Requires **Node.js 22+**.
 
 ---
 
