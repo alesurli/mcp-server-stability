@@ -2,11 +2,11 @@ import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type { StabilityClient } from "../client.js";
-import { saveAndReturn } from "../output.js";
+import { saveAndReturn, resolveImagePath } from "../output.js";
 import type { ToolResult } from "../types.js";
 
 const UpscaleCreativeSchema = z.object({
-  image_path: z.string().describe("Absolute path to the source image"),
+  image_path: z.string().describe("Absolute path or bare filename (use list_images to find files)"),
   prompt: z.string().describe("Guides the creative enhancement — describe the desired final look"),
   negative_prompt: z.string().optional(),
   creativity: z
@@ -31,14 +31,21 @@ export async function upscaleCreativeHandler(
   args: unknown
 ): Promise<ToolResult> {
   const input = UpscaleCreativeSchema.parse(args);
-  const extraFields: Record<string, string | number> = {
+  const imagePath = await resolveImagePath(input.image_path);
+
+  const fields: Record<string, string | number> = {
+    prompt: input.prompt,
     output_format: input.output_format ?? "png",
   };
-  if (input.negative_prompt) extraFields.negative_prompt = input.negative_prompt;
-  if (input.creativity !== undefined) extraFields.creativity = input.creativity;
-  if (input.seed !== undefined) extraFields.seed = input.seed;
+  if (input.negative_prompt) fields.negative_prompt = input.negative_prompt;
+  if (input.creativity !== undefined) fields.creativity = input.creativity;
+  if (input.seed !== undefined) fields.seed = input.seed;
 
-  const id = await client.startCreativeUpscale(input.image_path, input.prompt, extraFields);
-  const response = await client.pollCreativeUpscale(id);
+  const id = await client.startJob(
+    "/stable-image/upscale/creative",
+    fields,
+    { image: { path: imagePath, fieldName: "image" } }
+  );
+  const response = await client.pollJob("/stable-image/upscale/creative/result", id);
   return saveAndReturn(response.artifacts[0], "upscale_creative", input.output_format ?? "png");
 }

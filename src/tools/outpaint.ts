@@ -2,12 +2,12 @@ import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type { StabilityClient } from "../client.js";
-import { saveAndReturn } from "../output.js";
+import { saveAndReturn, resolveImagePath } from "../output.js";
 import type { ToolResult } from "../types.js";
 
 const OutpaintSchema = z
   .object({
-    image_path: z.string().describe("Absolute path to the source image"),
+    image_path: z.string().describe("Absolute path or bare filename (use list_images to find files)"),
     left: z.number().int().min(0).max(2000).optional().default(0).describe("Pixels to extend left"),
     right: z.number().int().min(0).max(2000).optional().default(0).describe("Pixels to extend right"),
     up: z.number().int().min(0).max(2000).optional().default(0).describe("Pixels to extend up"),
@@ -39,6 +39,7 @@ export async function outpaintHandler(
   args: unknown
 ): Promise<ToolResult> {
   const input = OutpaintSchema.parse(args);
+  const imagePath = await resolveImagePath(input.image_path);
   const fields: Record<string, string | number> = {
     output_format: input.output_format ?? "png",
   };
@@ -53,7 +54,7 @@ export async function outpaintHandler(
   const response = await client.request(
     "/stable-image/edit/outpaint",
     fields,
-    { image: { path: input.image_path, fieldName: "image" } }
+    { image: { path: imagePath, fieldName: "image" } }
   );
   return saveAndReturn(response.artifacts[0], "outpaint", input.output_format ?? "png");
 }

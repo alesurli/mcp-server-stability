@@ -29,23 +29,29 @@ function normalizeResponse(raw: Record<string, unknown>): StabilityResponse {
 export class StabilityClient {
   constructor(private readonly apiKey: string) {}
 
-  async request(
-    endpoint: string,
+  private async buildForm(
     fields: Record<string, string | number>,
     files?: Record<string, { path: string; fieldName: string }>
-  ): Promise<StabilityResponse> {
+  ): Promise<FormData> {
     const form = new FormData();
-
     for (const [key, value] of Object.entries(fields)) {
       form.append(key, String(value));
     }
-
     if (files) {
       for (const { path, fieldName } of Object.values(files)) {
         const data = await readFile(path);
         form.append(fieldName, new Blob([data]), basename(path));
       }
     }
+    return form;
+  }
+
+  async request(
+    endpoint: string,
+    fields: Record<string, string | number>,
+    files?: Record<string, { path: string; fieldName: string }>
+  ): Promise<StabilityResponse> {
+    const form = await this.buildForm(fields, files);
 
     const response = await fetch(`${BASE_URL}${endpoint}`, {
       method: "POST",
@@ -78,22 +84,14 @@ export class StabilityClient {
     return data;
   }
 
-  async startCreativeUpscale(
-    imagePath: string,
-    prompt: string,
-    extraFields?: Record<string, string | number>
+  async startJob(
+    endpoint: string,
+    fields: Record<string, string | number>,
+    files?: Record<string, { path: string; fieldName: string }>
   ): Promise<string> {
-    const form = new FormData();
-    const data = await readFile(imagePath);
-    form.append("image", new Blob([data]), basename(imagePath));
-    form.append("prompt", prompt);
-    if (extraFields) {
-      for (const [key, value] of Object.entries(extraFields)) {
-        form.append(key, String(value));
-      }
-    }
+    const form = await this.buildForm(fields, files);
 
-    const response = await fetch(`${BASE_URL}/stable-image/upscale/creative`, {
+    const response = await fetch(`${BASE_URL}${endpoint}`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${this.apiKey}`,
@@ -102,17 +100,23 @@ export class StabilityClient {
       body: form,
     });
 
+    if (response.status === 401) {
+      throw new Error("Invalid API key. Check your STABILITY_API_KEY at https://platform.stability.ai/account/keys");
+    }
+    if (response.status === 429) {
+      throw new Error("Rate limit exceeded. Please retry in about 60 seconds.");
+    }
     if (!response.ok) {
       const body = await response.text();
-      throw new Error(`Creative upscale start failed ${response.status}: ${body}`);
+      throw new Error(`Stability API error ${response.status}: ${body}`);
     }
 
     const { id } = (await response.json()) as { id: string };
     return id;
   }
 
-  async pollCreativeUpscale(id: string): Promise<StabilityResponse> {
-    const url = `${BASE_URL}/stable-image/upscale/creative/result/${id}`;
+  async pollJob(resultEndpoint: string, id: string): Promise<StabilityResponse> {
+    const url = `${BASE_URL}${resultEndpoint}/${id}`;
     const deadline = Date.now() + 5 * 60 * 1000;
 
     while (Date.now() < deadline) {
@@ -133,9 +137,9 @@ export class StabilityClient {
       }
 
       const body = await response.text();
-      throw new Error(`Creative upscale poll failed ${response.status}: ${body}`);
+      throw new Error(`Job poll failed ${response.status}: ${body}`);
     }
 
-    throw new Error(`Creative upscale timed out after 5 minutes (id: ${id})`);
+    throw new Error(`Job timed out after 5 minutes (id: ${id})`);
   }
 }

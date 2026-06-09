@@ -2,11 +2,11 @@ import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type { StabilityClient } from "../client.js";
-import { saveAndReturn } from "../output.js";
+import { saveAndReturn, resolveImagePath } from "../output.js";
 import type { ToolResult } from "../types.js";
 
 const ReplaceBgSchema = z.object({
-  image_path: z.string().describe("Absolute path to the subject image (works with solid or transparent background)"),
+  image_path: z.string().describe("Absolute path or bare filename (use list_images to find files)"),
   background_prompt: z.string().describe("Description of the new background to generate"),
   foreground_prompt: z.string().optional().describe("Description of the subject, helps integration"),
   negative_prompt: z.string().optional(),
@@ -33,7 +33,7 @@ const ReplaceBgSchema = z.object({
 export const replaceBgTool: Tool = {
   name: "replace_background",
   description:
-    "Replace and relight the background of an image. Works on photos with solid or transparent backgrounds. Excellent for product shots. Cost: ~$0.04.",
+    "Replace and relight the background of an image. Works on photos with solid or transparent backgrounds. Excellent for product shots. Async operation — may take up to a few minutes. Cost: ~$0.04.",
   inputSchema: zodToJsonSchema(ReplaceBgSchema) as Tool["inputSchema"],
 };
 
@@ -42,6 +42,8 @@ export async function replaceBgHandler(
   args: unknown
 ): Promise<ToolResult> {
   const input = ReplaceBgSchema.parse(args);
+  const imagePath = await resolveImagePath(input.image_path);
+
   const fields: Record<string, string | number> = {
     background_prompt: input.background_prompt,
     output_format: input.output_format ?? "png",
@@ -53,10 +55,11 @@ export async function replaceBgHandler(
   if (input.preserve_original_subject !== undefined) fields.preserve_original_subject = input.preserve_original_subject;
   if (input.seed !== undefined) fields.seed = input.seed;
 
-  const response = await client.request(
+  const id = await client.startJob(
     "/stable-image/edit/replace-background-and-relight",
     fields,
-    { subject_image: { path: input.image_path, fieldName: "subject_image" } }
+    { subject_image: { path: imagePath, fieldName: "subject_image" } }
   );
+  const response = await client.pollJob("/stable-image/edit/replace-background-and-relight/result", id);
   return saveAndReturn(response.artifacts[0], "replace_background", input.output_format ?? "png");
 }

@@ -2,11 +2,11 @@ import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type { StabilityClient } from "../client.js";
-import { saveAndReturn } from "../output.js";
+import { saveAndReturn, resolveImagePath } from "../output.js";
 import type { ToolResult } from "../types.js";
 
 const SearchReplaceSchema = z.object({
-  image_path: z.string().describe("Absolute path to the source image"),
+  image_path: z.string().describe("Absolute path or bare filename (use list_images to find files)"),
   search_prompt: z.string().describe("Description of the object to find and remove"),
   prompt: z.string().describe("Description of what to generate as replacement"),
   negative_prompt: z.string().optional(),
@@ -26,6 +26,7 @@ export async function searchReplaceHandler(
   args: unknown
 ): Promise<ToolResult> {
   const input = SearchReplaceSchema.parse(args);
+  const imagePath = await resolveImagePath(input.image_path);
   const fields: Record<string, string | number> = {
     search_prompt: input.search_prompt,
     prompt: input.prompt,
@@ -37,7 +38,7 @@ export async function searchReplaceHandler(
   const response = await client.request(
     "/stable-image/edit/search-and-replace",
     fields,
-    { image: { path: input.image_path, fieldName: "image" } }
+    { image: { path: imagePath, fieldName: "image" } }
   );
   return saveAndReturn(response.artifacts[0], "search_and_replace", input.output_format ?? "png");
 }

@@ -2,13 +2,13 @@ import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type { StabilityClient } from "../client.js";
-import { saveAndReturn } from "../output.js";
+import { saveAndReturn, resolveImagePath } from "../output.js";
 import type { ToolResult } from "../types.js";
 
 const InpaintSchema = z.object({
-  image_path: z.string().describe("Absolute path to the source image"),
+  image_path: z.string().describe("Absolute path or bare filename (use list_images to find files)"),
   mask_path: z.string().describe(
-    "Absolute path to the mask image — white pixels define the area to inpaint, black pixels are kept. Must be the same dimensions as the source image."
+    "Absolute path or bare filename for the mask image — white pixels define the area to inpaint, black pixels are kept. Must be the same dimensions as the source image."
   ),
   prompt: z.string().describe("What to generate in the masked area"),
   negative_prompt: z.string().optional(),
@@ -28,6 +28,8 @@ export async function inpaintHandler(
   args: unknown
 ): Promise<ToolResult> {
   const input = InpaintSchema.parse(args);
+  const imagePath = await resolveImagePath(input.image_path);
+  const maskPath = await resolveImagePath(input.mask_path);
   const fields: Record<string, string | number> = {
     prompt: input.prompt,
     output_format: input.output_format ?? "png",
@@ -39,8 +41,8 @@ export async function inpaintHandler(
     "/stable-image/edit/inpaint",
     fields,
     {
-      image: { path: input.image_path, fieldName: "image" },
-      mask: { path: input.mask_path, fieldName: "mask" },
+      image: { path: imagePath, fieldName: "image" },
+      mask: { path: maskPath, fieldName: "mask" },
     }
   );
   return saveAndReturn(response.artifacts[0], "inpaint", input.output_format ?? "png");

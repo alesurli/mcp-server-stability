@@ -15,6 +15,8 @@ import { outpaintTool, outpaintHandler } from "./outpaint.js";
 import { searchRecolorTool, searchRecolorHandler } from "./search-recolor.js";
 import { upscaleFastTool, upscaleFastHandler } from "./upscale-fast.js";
 import { upscaleCreativeTool, upscaleCreativeHandler } from "./upscale-creative.js";
+import { listImagesTool, listImagesHandler } from "./list-images.js";
+import { useClipboardImageTool, useClipboardImageHandler } from "./clipboard.js";
 
 export const allTools: Tool[] = [
   generateSd3Tool,
@@ -28,6 +30,8 @@ export const allTools: Tool[] = [
   searchRecolorTool,
   upscaleFastTool,
   upscaleCreativeTool,
+  listImagesTool,
+  useClipboardImageTool,
 ];
 
 export const toolHandlers: Record<
@@ -45,4 +49,6 @@ export const toolHandlers: Record<
   search_and_recolor:    (c, a) => searchRecolorHandler(c, a),
   upscale_fast:          (c, a) => upscaleFastHandler(c, a),
   upscale_creative:      (c, a) => upscaleCreativeHandler(c, a),
+  list_images:           (c, a) => listImagesHandler(c, a),
+  use_clipboard_image:   (c, a) => useClipboardImageHandler(c, a),
 };

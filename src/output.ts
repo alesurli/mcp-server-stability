@@ -1,4 +1,4 @@
-import { mkdir, writeFile } from "node:fs/promises";
+import { access, mkdir, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import sharp from "sharp";
@@ -10,15 +10,44 @@ const MIME_TYPES: Record<string, string> = {
   webp: "image/webp",
 };
 
-function getOutputDir(): string {
+export function getOutputDir(): string {
   const env = process.env.STABILITY_OUTPUT_DIR;
   if (env) return env.replace(/^~/, homedir());
   return join(homedir(), "Downloads", "stability-ai");
 }
 
-function formatDate(d: Date): string {
+export function getInputDir(): string | undefined {
+  const env = process.env.STABILITY_INPUT_DIR;
+  if (!env) return undefined;
+  return env.replace(/^~/, homedir());
+}
+
+export function formatDate(d: Date): string {
   const p = (n: number) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}_${p(d.getHours())}-${p(d.getMinutes())}-${p(d.getSeconds())}`;
+}
+
+export async function resolveImagePath(imagePath: string): Promise<string> {
+  if (imagePath.includes("/") || imagePath.includes("\\")) {
+    return imagePath;
+  }
+  const candidates = [join(getOutputDir(), imagePath)];
+  const inputDir = getInputDir();
+  if (inputDir) candidates.push(join(inputDir, imagePath));
+
+  for (const candidate of candidates) {
+    try {
+      await access(candidate);
+      return candidate;
+    } catch {
+      // try next
+    }
+  }
+
+  throw new Error(
+    `Image "${imagePath}" not found. Searched: ${candidates.join(", ")}. ` +
+    `Use list_images to see available files, or provide an absolute path.`
+  );
 }
 
 export async function saveImage(

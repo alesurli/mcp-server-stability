@@ -2,11 +2,11 @@ import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type { StabilityClient } from "../client.js";
-import { saveAndReturn } from "../output.js";
+import { saveAndReturn, resolveImagePath } from "../output.js";
 import type { ToolResult } from "../types.js";
 
 const SearchRecolorSchema = z.object({
-  image_path: z.string().describe("Absolute path to the source image"),
+  image_path: z.string().describe("Absolute path or bare filename (use list_images to find files)"),
   select_prompt: z.string().describe("Description of the object to recolor"),
   prompt: z.string().describe("New color or appearance description (e.g. 'matte black finish')"),
   negative_prompt: z.string().optional(),
@@ -26,6 +26,7 @@ export async function searchRecolorHandler(
   args: unknown
 ): Promise<ToolResult> {
   const input = SearchRecolorSchema.parse(args);
+  const imagePath = await resolveImagePath(input.image_path);
   const fields: Record<string, string | number> = {
     select_prompt: input.select_prompt,
     prompt: input.prompt,
@@ -37,7 +38,7 @@ export async function searchRecolorHandler(
   const response = await client.request(
     "/stable-image/edit/search-and-recolor",
     fields,
-    { image: { path: input.image_path, fieldName: "image" } }
+    { image: { path: imagePath, fieldName: "image" } }
   );
   return saveAndReturn(response.artifacts[0], "search_and_recolor", input.output_format ?? "png");
 }
