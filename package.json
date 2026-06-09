@@ -1,10 +1,10 @@
 {
-  "name": "mcp-server-stability",
+  "name": "mcp-stability-ai",
   "version": "1.0.0",
   "description": "MCP server for Stability.ai v2beta image generation and editing — use directly in Claude Desktop",
   "type": "module",
   "bin": {
-    "mcp-server-stability": "./dist/index.js"
+    "mcp-stability-ai": "./dist/index.js"
   },
   "files": [
     "dist"
