@@ -19,6 +19,16 @@ function normalizeResponse(raw: Record<string, unknown>): StabilityResponse {
       }],
     };
   }
+  // Generic async result endpoint (/results/{id}) returns {result: "<base64>"}
+  if (typeof raw.result === "string") {
+    return {
+      artifacts: [{
+        base64: raw.result,
+        seed: typeof raw.seed === "number" ? raw.seed : 0,
+        finishReason: "SUCCESS",
+      }],
+    };
+  }
   if (Array.isArray(raw.artifacts) && raw.artifacts.length > 0) {
     return raw as unknown as StabilityResponse;
   }
