@@ -1,0 +1,45 @@
+{
+  "name": "mcp-server-stability",
+  "version": "1.0.0",
+  "description": "MCP server for Stability.ai v2beta image generation and editing — use directly in Claude Desktop",
+  "type": "module",
+  "bin": {
+    "mcp-server-stability": "./dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc && shx chmod +x dist/index.js",
+    "dev": "tsc --watch",
+    "clean": "shx rm -rf dist",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.0",
+    "zod": "^3.25.0",
+    "zod-to-json-schema": "^3.24.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "shx": "^0.3.4",
+    "typescript": "^5.8.0"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "keywords": [
+    "mcp",
+    "stability-ai",
+    "stable-diffusion",
+    "image-generation",
+    "image-editing",
+    "claude",
+    "claude-desktop"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/alesurli/mcp-server-stability.git"
+  }
+}
