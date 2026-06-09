@@ -1,6 +1,7 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { join } from "node:path";
+import sharp from "sharp";
 import type { StabilityArtifact, SavedImageResult, ToolResult } from "./types.js";
 
 const OUTPUT_DIR = join(homedir(), "stability-output");
@@ -26,17 +27,26 @@ export async function saveImage(
   return { filePath, seed };
 }
 
+async function compressPreview(base64: string): Promise<string> {
+  const buffer = Buffer.from(base64, "base64");
+  const preview = await sharp(buffer)
+    .resize(768, 768, { fit: "inside", withoutEnlargement: true })
+    .webp({ quality: 80 })
+    .toBuffer();
+  return preview.toString("base64");
+}
+
 export async function saveAndReturn(
   artifact: StabilityArtifact,
   toolName: string,
   outputFormat = "png"
 ): Promise<ToolResult> {
   const saved = await saveImage(artifact, toolName, outputFormat);
-  const mimeType = MIME_TYPES[outputFormat] ?? "image/png";
+  const preview = await compressPreview(artifact.base64);
   return {
     content: [
       { type: "text", text: `Image saved to: ${saved.filePath}\nSeed: ${saved.seed}` },
-      { type: "image", data: artifact.base64, mimeType },
+      { type: "image", data: preview, mimeType: "image/webp" },
     ],
   };
 }

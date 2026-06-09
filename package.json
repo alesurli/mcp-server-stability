@@ -17,11 +17,13 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.0",
+    "sharp": "^0.34.5",
     "zod": "^3.25.0",
     "zod-to-json-schema": "^3.24.5"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
+    "@types/sharp": "^0.31.1",
     "shx": "^0.3.4",
     "typescript": "^5.8.0"
   },
