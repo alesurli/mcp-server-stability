@@ -4,27 +4,36 @@ import { join } from "node:path";
 import sharp from "sharp";
 import type { StabilityArtifact, SavedImageResult, ToolResult } from "./types.js";
 
-const OUTPUT_DIR = join(homedir(), "stability-output");
-
 const MIME_TYPES: Record<string, string> = {
   png:  "image/png",
   jpeg: "image/jpeg",
   webp: "image/webp",
 };
 
+function getOutputDir(): string {
+  const env = process.env.STABILITY_OUTPUT_DIR;
+  if (env) return env.replace(/^~/, homedir());
+  return join(homedir(), "Downloads", "stability-ai");
+}
+
+function formatDate(d: Date): string {
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}_${p(d.getHours())}-${p(d.getMinutes())}-${p(d.getSeconds())}`;
+}
+
 export async function saveImage(
   artifact: StabilityArtifact,
   toolName: string,
   outputFormat = "png"
 ): Promise<SavedImageResult> {
-  await mkdir(OUTPUT_DIR, { recursive: true });
-  const timestamp = Date.now();
-  const seed = artifact.seed;
+  const outputDir = getOutputDir();
+  await mkdir(outputDir, { recursive: true });
   const ext = outputFormat === "jpeg" ? "jpg" : outputFormat;
-  const fileName = `${toolName}_${timestamp}_${seed}.${ext}`;
-  const filePath = join(OUTPUT_DIR, fileName);
+  const slug = toolName.replace(/_/g, "-");
+  const fileName = `${slug}_${formatDate(new Date())}_${artifact.seed}.${ext}`;
+  const filePath = join(outputDir, fileName);
   await writeFile(filePath, Buffer.from(artifact.base64, "base64"));
-  return { filePath, seed };
+  return { filePath, seed: artifact.seed };
 }
 
 async function compressPreview(base64: string): Promise<string> {

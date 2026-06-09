@@ -93,11 +93,20 @@ Claude will chain the three tools automatically:
 
 ## Output files
 
-All results are written to `~/stability-output/` (created automatically).
+Results are saved to `~/Downloads/stability-ai/` by default (created automatically).
 
-Filename format: `{tool}_{timestamp}_{seed}.png`
+To use a different folder, set `STABILITY_OUTPUT_DIR` in the Claude Desktop config:
 
-Example: `replace_background_1749456789012_3847291.png`
+```json
+"env": {
+  "STABILITY_API_KEY": "sk-...",
+  "STABILITY_OUTPUT_DIR": "/Users/you/Pictures/stability"
+}
+```
+
+Filename format: `{tool}_{YYYY-MM-DD}_{HH-MM-SS}_{seed}.{ext}`
+
+Example: `replace-background_2026-06-09_11-36-20_2847291838.png`
 
 Pass any output path directly to the next tool — Claude handles the chaining.
 
