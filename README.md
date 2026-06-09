@@ -42,7 +42,7 @@ Generate, edit, upscale, and manage images entirely through natural language ins
 
 | Tool | Description |
 |---|---|
-| `list_images` | List images in output/input directories with thumbnails |
+| `list_images` | List images in output/input directories with sizes and dates |
 | `use_clipboard_image` | Save clipboard image to file for use in the next tool (macOS) |
 | `reveal_in_finder` | Open the output folder or reveal a file in Finder (macOS) |
 | `delete_image` | Permanently delete an image file |
@@ -156,8 +156,8 @@ With `STABILITY_INPUT_DIR` set, you can pass bare filenames like `"dragon.jpg"` 
 ## Development
 
 ```bash
-git clone https://github.com/alesurli/mcp-stability-ai.git
-cd mcp-stability-ai
+git clone https://github.com/alesurli/mcp-server-stability.git
+cd mcp-server-stability
 npm install
 npm run build
 ```
@@ -169,7 +169,7 @@ Point Claude Desktop at your local build:
   "mcpServers": {
     "stability": {
       "command": "node",
-      "args": ["/absolute/path/to/mcp-stability-ai/dist/index.js"],
+      "args": ["/absolute/path/to/mcp-server-stability/dist/index.js"],
       "env": {
         "STABILITY_API_KEY": "sk-YOUR_KEY_HERE"
       }
