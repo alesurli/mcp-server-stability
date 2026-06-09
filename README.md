@@ -1,7 +1,7 @@
 # mcp-stability-ai
 
 [![npm version](https://img.shields.io/npm/v/mcp-stability-ai)](https://www.npmjs.com/package/mcp-stability-ai)
-[![CI](https://github.com/alesurli/mcp-server-stability/actions/workflows/ci.yml/badge.svg)](https://github.com/alesurli/mcp-server-stability/actions/workflows/ci.yml)
+[![CI](https://github.com/alesurli/mcp-stability-ai/actions/workflows/ci.yml/badge.svg)](https://github.com/alesurli/mcp-stability-ai/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 A Claude MCP server for [Stability.ai](https://stability.ai) image generation and editing — always maintained and up to date with the v2beta API.
@@ -156,8 +156,8 @@ With `STABILITY_INPUT_DIR` set, you can pass bare filenames like `"dragon.jpg"` 
 ## Development
 
 ```bash
-git clone https://github.com/alesurli/mcp-server-stability.git
-cd mcp-server-stability
+git clone https://github.com/alesurli/mcp-stability-ai.git
+cd mcp-stability-ai
 npm install
 npm run build
 ```
@@ -169,7 +169,7 @@ Point Claude Desktop at your local build:
   "mcpServers": {
     "stability": {
       "command": "node",
-      "args": ["/absolute/path/to/mcp-server-stability/dist/index.js"],
+      "args": ["/absolute/path/to/mcp-stability-ai/dist/index.js"],
       "env": {
         "STABILITY_API_KEY": "sk-YOUR_KEY_HERE"
       }
