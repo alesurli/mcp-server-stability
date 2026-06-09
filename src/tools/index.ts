@@ -17,6 +17,7 @@ import { upscaleFastTool, upscaleFastHandler } from "./upscale-fast.js";
 import { upscaleCreativeTool, upscaleCreativeHandler } from "./upscale-creative.js";
 import { listImagesTool, listImagesHandler } from "./list-images.js";
 import { useClipboardImageTool, useClipboardImageHandler } from "./clipboard.js";
+import { revealInFinderTool, revealInFinderHandler, deleteImageTool, deleteImageHandler } from "./file-ops.js";
 
 export const allTools: Tool[] = [
   generateSd3Tool,
@@ -32,6 +33,8 @@ export const allTools: Tool[] = [
   upscaleCreativeTool,
   listImagesTool,
   useClipboardImageTool,
+  revealInFinderTool,
+  deleteImageTool,
 ];
 
 export const toolHandlers: Record<
@@ -51,4 +54,6 @@ export const toolHandlers: Record<
   upscale_creative:      (c, a) => upscaleCreativeHandler(c, a),
   list_images:           (c, a) => listImagesHandler(c, a),
   use_clipboard_image:   (c, a) => useClipboardImageHandler(c, a),
+  reveal_in_finder:      (c, a) => revealInFinderHandler(c, a),
+  delete_image:          (c, a) => deleteImageHandler(c, a),
 };
