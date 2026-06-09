@@ -46,6 +46,6 @@ export async function upscaleCreativeHandler(
     fields,
     { image: { path: imagePath, fieldName: "image" } }
   );
-  const response = await client.pollJob("/stable-image/upscale/creative/result", id);
+  const response = await client.pollJob("/results", id);
   return saveAndReturn(response.artifacts[0], "upscale_creative", input.output_format ?? "png");
 }

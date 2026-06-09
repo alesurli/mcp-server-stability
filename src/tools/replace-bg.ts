@@ -60,6 +60,6 @@ export async function replaceBgHandler(
     fields,
     { subject_image: { path: imagePath, fieldName: "subject_image" } }
   );
-  const response = await client.pollJob("/stable-image/edit/replace-background-and-relight/result", id);
+  const response = await client.pollJob("/results", id);
   return saveAndReturn(response.artifacts[0], "replace_background", input.output_format ?? "png");
 }
