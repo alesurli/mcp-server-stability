@@ -9,6 +9,10 @@ A Claude MCP server for [Stability.ai](https://stability.ai) image generation an
 Generate, edit, upscale, and manage images entirely through natural language inside Claude. No manual file paths required.
 
 ---
+## Why this exists
+
+I built this because I needed a maintained Claude Desktop MCP workflow for Stability.ai image generation/editing, local file handling, and occasional cover/product-shot work without owning a capable GPU or maintaining a local ComfyUI stack.
+This is not meant to replace local-first tools like ComfyUI or Automatic1111. It is an open-source integration for users who specifically want Claude Desktop + MCP + Stability.ai in one conversational workflow.
 
 ## Tools
 
