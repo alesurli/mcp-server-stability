@@ -4,6 +4,28 @@ import type { StabilityResponse } from "./types.js";
 
 const BASE_URL = "https://api.stability.ai/v2beta";
 
+function normalizeResponse(raw: Record<string, unknown>): StabilityResponse {
+  // v2beta returns either:
+  //   { image: "<base64>", finish_reason: "SUCCESS", seed: 123 }   ← most endpoints
+  //   { artifacts: [{ base64: "...", finishReason: "SUCCESS", seed: 123 }] }  ← legacy
+  if (typeof raw.image === "string") {
+    return {
+      artifacts: [{
+        base64: raw.image,
+        seed: typeof raw.seed === "number" ? raw.seed : 0,
+        finishReason: raw.finish_reason === "CONTENT_FILTERED" ? "CONTENT_FILTERED"
+                    : raw.finish_reason === "ERROR"            ? "ERROR"
+                    : "SUCCESS",
+      }],
+    };
+  }
+  if (Array.isArray(raw.artifacts) && raw.artifacts.length > 0) {
+    return raw as unknown as StabilityResponse;
+  }
+  const preview = JSON.stringify(raw).slice(0, 200);
+  throw new Error(`Unexpected API response format: ${preview}`);
+}
+
 export class StabilityClient {
   constructor(private readonly apiKey: string) {}
 
@@ -34,6 +56,9 @@ export class StabilityClient {
       body: form,
     });
 
+    if (response.status === 401) {
+      throw new Error("Invalid API key. Check your STABILITY_API_KEY at https://platform.stability.ai/account/keys");
+    }
     if (response.status === 429) {
       throw new Error("Rate limit exceeded (150 req/10s). Please retry in about 60 seconds.");
     }
@@ -42,7 +67,15 @@ export class StabilityClient {
       throw new Error(`Stability API error ${response.status}: ${body}`);
     }
 
-    return response.json() as Promise<StabilityResponse>;
+    const raw = (await response.json()) as Record<string, unknown>;
+    const data = normalizeResponse(raw);
+    if (data.artifacts[0].finishReason === "ERROR") {
+      throw new Error("Generation failed: Stability API returned finishReason ERROR.");
+    }
+    if (data.artifacts[0].finishReason === "CONTENT_FILTERED") {
+      throw new Error("Generation blocked by content filter. Try a different prompt.");
+    }
+    return data;
   }
 
   async startCreativeUpscale(
@@ -91,7 +124,8 @@ export class StabilityClient {
       });
 
       if (response.status === 200) {
-        return response.json() as Promise<StabilityResponse>;
+        const raw = (await response.json()) as Record<string, unknown>;
+        return normalizeResponse(raw);
       }
       if (response.status === 202) {
         await new Promise((r) => setTimeout(r, 3000));
